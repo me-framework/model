@@ -1,2 +1,2 @@
-# me-model
+# model
 Me Framework Model
