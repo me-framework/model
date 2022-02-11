@@ -68,10 +68,13 @@ class Model extends Component {
                 continue;
             }
             foreach ($rule as $config) {
-                $arConfig     = explode(':', $config);
-                $name         = strtolower($arConfig[0]);
-                $options      = $arConfig[1] ?? '';
-                $validators[] = Container::build(['class' => $this->_validatorsMap[$name], 'attribute' => $attribute, 'options' => $options]);
+                if (!isset($validators[$config])) {
+                    $arConfig            = explode(':', $config);
+                    $name                = strtolower($arConfig[0]);
+                    $options             = $arConfig[1] ?? '';
+                    $validators[$config] = Container::build(['class' => $this->_validatorsMap[$name], 'options' => $options]);
+                }
+                $validators[$config]->addAttribute($attribute);
             }
         }
         return $validators;
@@ -95,7 +98,7 @@ class Model extends Component {
         }
         $validators = $this->getValidators();
         foreach ($validators as $validator) {
-            $validator->validateAttribute($this);
+            $validator->validateAttributes($this);
         }
         return !$this->hasErrors();
     }

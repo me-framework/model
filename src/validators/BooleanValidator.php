@@ -10,9 +10,10 @@ class BooleanValidator extends Validator {
     }
     /**
      * @param \me\model\Model $model Model
+     * @param string $attribute Attribute Name
      */
-    public function validateAttribute($model) {
-        $value = $model->{$this->attribute};
+    public function validateAttribute($model, $attribute) {
+        $value = $model->$attribute;
         if (
                 $value !== null   &&
                 $value !== true   && $value !== false &&
@@ -20,10 +21,10 @@ class BooleanValidator extends Validator {
                 $value !== '1'    && $value !== '0'   &&
                 $value !== 'true' && $value !== 'false'
         ) {
-            $model->addError($this->attribute, 'boolean');
+            $model->addError($attribute, 'boolean');
         }
         else {
-            $model->{$this->attribute} = $this->cast($value);
+            $model->$attribute = $this->cast($value);
         }
     }
     private function cast($value) {

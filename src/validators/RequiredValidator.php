@@ -10,11 +10,13 @@ class RequiredValidator extends Validator {
     }
     /**
      * @param \me\model\Model $model Model
+     * @param string $attribute Attribute Name
      */
-    public function validateAttribute($model) {
-        $value = $model->{$this->attribute};
+    public function validateAttribute($model, $attribute) {
+        $value = $model->$attribute;
         if ($value === null || $value === '' || $value === []) {
-            $model->addError($this->attribute, 'required');
+            $model->$attribute = null;
+            $model->addError($attribute, 'required');
         }
     }
 }

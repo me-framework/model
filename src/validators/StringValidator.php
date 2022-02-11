@@ -15,30 +15,31 @@ class StringValidator extends Validator {
      */
     public function setOptions($options) {
         $config = explode(',', $options);
-        if (isset($config[0])) {
+        if (isset($config[0]) && !empty($config[0])) {
             $this->min = $config[0];
         }
-        if (isset($config[1])) {
+        if (isset($config[1]) && !empty($config[1])) {
             $this->max = $config[1];
         }
     }
     /**
      * @param \me\model\Model $model Model
+     * @param string $attribute Attribute Name
      */
-    public function validateAttribute($model) {
-        $value = $model->{$this->attribute};
+    public function validateAttribute($model, $attribute) {
+        $value = $model->$attribute;
         if ($value !== null && (!is_scalar($value) || !is_string($value))) {
-            $model->addError($this->attribute, 'string');
+            $model->addError($attribute, 'string');
         }
         else {
-            $model->{$this->attribute} = $value === null ? null : (string) $value;
+            $model->$attribute = $value === null ? null : (string) $value;
         }
-        if ($this->min !== null && $model->{$this->attribute} !== null && $model->{$this->attribute} < $this->min) {
-            $model->addError($this->attribute, 'too short');
+        if ($this->min !== null && $model->$attribute !== null && mb_strlen($model->$attribute) < $this->min) {
+            $model->addError($attribute, 'too short');
             return;
         }
-        if ($this->max !== null && $model->{$this->attribute} !== null && $model->{$this->attribute} > $this->max) {
-            $model->addError($this->attribute, 'too long');
+        if ($this->max !== null && $model->$attribute !== null && mb_strlen($model->$attribute) > $this->max) {
+            $model->addError($attribute, 'too long');
             return;
         }
     }
