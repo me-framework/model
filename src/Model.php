@@ -119,4 +119,7 @@ class Model extends Component {
             $this->_errors[$attribute] = [$error];
         }
     }
+    public function fields() {
+        return $this->attributes();
+    }
 }
