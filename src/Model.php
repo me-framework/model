@@ -41,11 +41,11 @@ class Model extends Component {
     //
     //
     private $_validatorsMap    = [
+        'boolean'  => 'me\model\validators\BooleanValidator',
+        'integer'  => 'me\model\validators\IntegerValidator',
+        'number'   => 'me\model\validators\NumberValidator',
         'required' => 'me\model\validators\RequiredValidator',
         'string'   => 'me\model\validators\StringValidator',
-        'number'   => 'me\model\validators\NumberValidator',
-        'integer'  => 'me\model\validators\IntegerValidator',
-        'boolean'  => 'me\model\validators\BooleanValidator',
     ];
     private $_activeValidators = [];
     /**
@@ -67,12 +67,11 @@ class Model extends Component {
             if (!is_array($rule) || empty($rule)) {
                 continue;
             }
-            foreach ($rule as $name) {
-                $name = strtolower($name);
-                if (!isset($validators[$name])) {
-                    $validators[$name] = Container::build(['class' => $this->_validatorsMap[$name]]);
-                }
-                $validators[$name]->addAttribute($attribute);
+            foreach ($rule as $config) {
+                $arConfig     = explode(':', $config);
+                $name         = strtolower($arConfig[0]);
+                $options      = $arConfig[1] ?? '';
+                $validators[] = Container::build(['class' => $this->_validatorsMap[$name], 'attribute' => $attribute, 'options' => $options]);
             }
         }
         return $validators;
@@ -96,7 +95,7 @@ class Model extends Component {
         }
         $validators = $this->getValidators();
         foreach ($validators as $validator) {
-            $validator->validateAttributes($this);
+            $validator->validateAttribute($this);
         }
         return !$this->hasErrors();
     }

@@ -3,26 +3,15 @@ namespace me\model;
 use me\core\Component;
 abstract class Validator extends Component {
     /**
-     * @var array Attributes Names [string]
+     * @var string Attribute Name
      */
-    private $_attributes = [];
+    public $attribute;
     /**
-     * @param string $attribute Attribute Name
+     * @param string $options
      */
-    public function addAttribute($attribute) {
-        $this->_attributes[] = $attribute;
-    }
+    abstract public function setOptions($options);
     /**
      * @param \me\model\Model $model Model
      */
-    public function validateAttributes($model) {
-        foreach ($this->_attributes as $attribute) {
-            $this->validateAttribute($model, $attribute);
-        }
-    }
-    /**
-     * @param \me\model\Model $model Model
-     * @param string $attribute Attribute Name
-     */
-    abstract public function validateAttribute($model, $attribute);
+    abstract public function validateAttribute($model);
 }
