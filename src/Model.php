@@ -40,14 +40,6 @@ class Model extends Component {
     //
     //
     //
-    private $_validatorsMap    = [
-        'boolean'  => 'me\model\validators\BooleanValidator',
-        'integer'  => 'me\model\validators\IntegerValidator',
-        'number'   => 'me\model\validators\NumberValidator',
-        'required' => 'me\model\validators\RequiredValidator',
-        'string'   => 'me\model\validators\StringValidator',
-    ];
-    private $_activeValidators = [];
     /**
      * @return array Attributes Rules For Validation
      */
@@ -57,9 +49,27 @@ class Model extends Component {
     /**
      * 
      */
+    private $_activeValidators = [];
+    /**
+     * 
+     */
+    protected function getValidatorsMap() {
+        return [
+            'boolean'  => 'me\model\validators\BooleanValidator',
+            'integer'  => 'me\model\validators\IntegerValidator',
+            'number'   => 'me\model\validators\NumberValidator',
+            'required' => 'me\model\validators\RequiredValidator',
+            'string'   => 'me\model\validators\StringValidator',
+        ];
+    }
+    /**
+     * 
+     */
     private function createValidators() {
-        $validators = [];
-        $rules      = $this->rules();
+        $validators    = [];
+        $rules         = $this->rules();
+        $validatorsMap = $this->getValidatorsMap();
+        
         foreach ($rules as $attribute => $rule) {
             if (is_string($rule)) {
                 $rule = explode('|', $rule);
@@ -72,7 +82,7 @@ class Model extends Component {
                     $arConfig            = explode(':', $config);
                     $name                = strtolower($arConfig[0]);
                     $options             = $arConfig[1] ?? '';
-                    $validators[$config] = Container::build(['class' => $this->_validatorsMap[$name], 'options' => $options]);
+                    $validators[$config] = Container::build(['class' => $validatorsMap[$name], 'options' => $options]);
                 }
                 $validators[$config]->addAttribute($attribute);
             }
