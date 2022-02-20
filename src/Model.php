@@ -28,7 +28,7 @@ class Model extends Component {
             return false;
         }
         $loaded     = false;
-        $attributes = array_flip($this->attributes());
+        $attributes = array_flip($this->safeAttributes());
         foreach ($values as $name => $value) {
             if (isset($attributes[$name])) {
                 $this->$name = $value;
@@ -45,6 +45,12 @@ class Model extends Component {
      */
     public function rules() {
         return [];
+    }
+    /**
+     * 
+     */
+    private function safeAttributes() {
+        return array_keys($this->rules());
     }
     /**
      * 
@@ -113,6 +119,8 @@ class Model extends Component {
         return !$this->hasErrors();
     }
     //
+    //
+    //
     private $_errors = [];
     public function clearErrors() {
         $this->_errors = [];
@@ -131,6 +139,9 @@ class Model extends Component {
             $this->_errors[$attribute] = [$error];
         }
     }
+    //
+    //
+    //
     public function fields() {
         return $this->attributes();
     }
