@@ -5,20 +5,14 @@ use ReflectionProperty;
 use me\core\Component;
 use me\core\components\Container;
 class Model extends Component {
-    use ArrayableTrait;
     /**
-     * @return array Attributes Names
+     * 
      */
-    public function attributes() {
-        $class = new ReflectionClass($this);
-        $names = [];
-        foreach ($class->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
-            if (!$property->isStatic()) {
-                $names[] = $property->getName();
-            }
-        }
-        return $names;
-    }
+    protected $_errors = [];
+    /**
+     * 
+     */
+    protected $_activeValidators = [];
     /**
      * @param array $values Values
      * @return bool Loaded
@@ -37,25 +31,95 @@ class Model extends Component {
         }
         return $loaded;
     }
+    /**
+     * @param bool $clearErrors Clear Errors
+     * @return bool
+     */
+    public function validate($clearErrors = true) {
+        if ($clearErrors) {
+            $this->clearErrors();
+        }
+        $validators = $this->getValidators();
+        foreach ($validators as $validator) {
+            $validator->validateAttributes($this);
+        }
+        return !$this->hasErrors();
+    }
+    /**
+     * 
+     */
+    public function clearErrors() {
+        $this->_errors = [];
+    }
+    /**
+     * 
+     */
+    public function hasErrors() {
+        return !empty($this->_errors);
+    }
+    /**
+     * 
+     */
+    public function getErrors($attribute = null) {
+        return $attribute === null ? $this->_errors : $this->_errors[$attribute];
+    }
+    /**
+     * 
+     */
+    public function addError($attribute, $error) {
+        if (isset($this->_errors[$attribute])) {
+            array_push($this->_errors[$attribute], $error);
+        }
+        else {
+            $this->_errors[$attribute] = [$error];
+        }
+    }
+    /**
+     * 
+     */
+    public function toArray() {
+        $attributes = $this->fields();
+        $array = [];
+        foreach ($attributes as $attribute) {
+            $array[$attribute] = $this->$attribute;
+        }
+        return $array;
+    }
+    //
     //
     //
     //
     /**
      * @return array Attributes Rules For Validation
      */
-    public function rules() {
+    protected function rules() {
         return [];
     }
     /**
      * 
      */
-    private function safeAttributes() {
-        return array_keys($this->rules());
+    protected function fields() {
+        return $this->attributes();
+    }
+    /**
+     * @return array Attributes Names
+     */
+    protected function attributes() {
+        $class = new ReflectionClass($this);
+        $names = [];
+        foreach ($class->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
+            if (!$property->isStatic()) {
+                $names[] = $property->getName();
+            }
+        }
+        return $names;
     }
     /**
      * 
      */
-    private $_activeValidators = [];
+    protected function safeAttributes() {
+        return array_keys($this->rules());
+    }
     /**
      * 
      */
@@ -71,7 +135,7 @@ class Model extends Component {
     /**
      * 
      */
-    private function createValidators() {
+    protected function createValidators() {
         $validators    = [];
         $rules         = $this->rules();
         $validatorsMap = $this->getValidatorsMap();
@@ -98,51 +162,10 @@ class Model extends Component {
     /**
      * @return \me\model\Validator[] Validators
      */
-    private function getValidators() {
+    protected function getValidators() {
         if (empty($this->_activeValidators)) {
             $this->_activeValidators = $this->createValidators();
         }
         return $this->_activeValidators;
-    }
-    /**
-     * @param bool $clearErrors Clear Errors
-     * @return bool
-     */
-    public function validate($clearErrors = true) {
-        if ($clearErrors) {
-            $this->clearErrors();
-        }
-        $validators = $this->getValidators();
-        foreach ($validators as $validator) {
-            $validator->validateAttributes($this);
-        }
-        return !$this->hasErrors();
-    }
-    //
-    //
-    //
-    private $_errors = [];
-    public function clearErrors() {
-        $this->_errors = [];
-    }
-    public function hasErrors() {
-        return !empty($this->_errors);
-    }
-    public function getErrors($attribute = null) {
-        return $attribute === null ? $this->_errors : $this->_errors[$attribute];
-    }
-    public function addError($attribute, $error) {
-        if (isset($this->_errors[$attribute])) {
-            array_push($this->_errors[$attribute], $error);
-        }
-        else {
-            $this->_errors[$attribute] = [$error];
-        }
-    }
-    //
-    //
-    //
-    public function fields() {
-        return $this->attributes();
     }
 }
