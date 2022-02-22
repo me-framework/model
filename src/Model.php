@@ -5,7 +5,7 @@ use ReflectionProperty;
 use me\core\Cache;
 use me\core\Component;
 use me\core\components\Container;
-use me\core\helpers\StringHelper;
+use me\core\components\Security;
 class Model extends Component {
     /**
      * 
@@ -200,7 +200,7 @@ class Model extends Component {
      */
     protected function getKey() {
         if ($this->_key === null) {
-            $this->_key = StringHelper::generateKey();
+            $this->_key = Security::generateRandomString();
         }
         return $this->_key;
     }
