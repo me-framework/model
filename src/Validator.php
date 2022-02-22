@@ -23,10 +23,17 @@ abstract class Validator extends Component {
     }
     /**
      * @param \me\model\Model $model Model
+     * @param array|null $attributes attributes
+     * @param array $except except
      */
-    public function validateAttributes($model) {
+    public function validateAttributes($model, $attributes = null, $except = []) {
         foreach ($this->_attributes as $attribute) {
-            $this->validateAttribute($model, $attribute);
+            if ($attributes === null && !in_array($attribute, $except, true)) {
+                $this->validateAttribute($model, $attribute);
+            }
+            else if ($attributes !== null && in_array($attribute, $attributes, true) && !in_array($attribute, $except, true)) {
+                $this->validateAttribute($model, $attribute);
+            }
         }
     }
 }

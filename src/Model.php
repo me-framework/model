@@ -2,17 +2,23 @@
 namespace me\model;
 use ReflectionClass;
 use ReflectionProperty;
+use me\core\Cache;
 use me\core\Component;
 use me\core\components\Container;
+use me\core\helpers\StringHelper;
 class Model extends Component {
     /**
      * 
      */
-    protected $_errors = [];
+    protected $_key;
     /**
      * 
      */
-    protected $_activeValidators = [];
+    protected $_errors = [];
+    //
+    //
+    //
+    //
     /**
      * @param array $values Values
      * @return bool Loaded
@@ -33,15 +39,17 @@ class Model extends Component {
     }
     /**
      * @param bool $clearErrors Clear Errors
+     * @param array|null $attributes attributes
+     * @param array $except except
      * @return bool
      */
-    public function validate($clearErrors = true) {
+    public function validate($clearErrors = true, $attributes = null, $except = []) {
         if ($clearErrors) {
             $this->clearErrors();
         }
         $validators = $this->getValidators();
         foreach ($validators as $validator) {
-            $validator->validateAttributes($this);
+            $validator->validateAttributes($this, $attributes, $except);
         }
         return !$this->hasErrors();
     }
@@ -77,9 +85,20 @@ class Model extends Component {
     /**
      * 
      */
+    public function addErrors($attribute, $errors) {
+        if ($errors === null) {
+            unset($this->_errors[$attribute]);
+        }
+        else {
+            $this->_errors[$attribute] = $errors;
+        }
+    }
+    /**
+     * 
+     */
     public function toArray() {
         $attributes = $this->fields();
-        $array = [];
+        $array      = [];
         foreach ($attributes as $attribute) {
             $array[$attribute] = $this->$attribute;
         }
@@ -125,10 +144,15 @@ class Model extends Component {
      */
     protected function getValidatorsMap() {
         return [
+            'bool'     => 'me\model\validators\BooleanValidator',
             'boolean'  => 'me\model\validators\BooleanValidator',
+            'int'      => 'me\model\validators\IntegerValidator',
             'integer'  => 'me\model\validators\IntegerValidator',
+            'num'      => 'me\model\validators\NumberValidator',
             'number'   => 'me\model\validators\NumberValidator',
+            'req'      => 'me\model\validators\RequiredValidator',
             'required' => 'me\model\validators\RequiredValidator',
+            'str'      => 'me\model\validators\StringValidator',
             'string'   => 'me\model\validators\StringValidator',
         ];
     }
@@ -139,7 +163,7 @@ class Model extends Component {
         $validators    = [];
         $rules         = $this->rules();
         $validatorsMap = $this->getValidatorsMap();
-        
+
         foreach ($rules as $attribute => $rule) {
             if (is_string($rule)) {
                 $rule = explode('|', $rule);
@@ -163,9 +187,21 @@ class Model extends Component {
      * @return \me\model\Validator[] Validators
      */
     protected function getValidators() {
-        if (empty($this->_activeValidators)) {
-            $this->_activeValidators = $this->createValidators();
+        $key              = $this->getKey();
+        $activeValidators = Cache::getCache([$key, 'activeValidators']);
+        if ($activeValidators === null) {
+            $activeValidators = $this->createValidators();
+            Cache::setCache([$key, 'activeValidators'], $activeValidators);
         }
-        return $this->_activeValidators;
+        return $activeValidators;
+    }
+    /**
+     * 
+     */
+    protected function getKey() {
+        if ($this->_key === null) {
+            $this->_key = StringHelper::generateKey();
+        }
+        return $this->_key;
     }
 }
