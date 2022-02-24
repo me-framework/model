@@ -10,15 +10,18 @@ class Model extends Component {
     /**
      * 
      */
-    protected $_key;
+    protected $_errors = [];
     /**
      * 
      */
-    protected $_errors = [];
+    protected $_key;
     //
     //
     //
     //
+    public function init() {
+        $this->_key = Security::generateRandomString();
+    }
     /**
      * @param array $values Values
      * @return bool Loaded
@@ -28,7 +31,7 @@ class Model extends Component {
             return false;
         }
         $loaded     = false;
-        $attributes = array_flip($this->safeAttributes());
+        $attributes = $this->rules();
         foreach ($values as $name => $value) {
             if (isset($attributes[$name])) {
                 $this->$name = $value;
@@ -97,10 +100,21 @@ class Model extends Component {
      * 
      */
     public function toArray() {
-        $attributes = $this->fields();
+        $attributes = $this->attributes();
         $array      = [];
         foreach ($attributes as $attribute) {
-            $array[$attribute] = $this->$attribute;
+            $value = $this->$attribute;
+            if ($value instanceof self) {
+                $value = $value->toArray();
+            }
+            elseif (is_array($value)) {
+                foreach ($value as &$val) {
+                    if ($val instanceof self) {
+                        $val = $val->toArray();
+                    }
+                }
+            }
+            $array[$attribute] = $value;
         }
         return $array;
     }
@@ -117,7 +131,7 @@ class Model extends Component {
     /**
      * @return array Attributes Names
      */
-    protected function fields() {
+    protected function attributes() {
         $class = new ReflectionClass($this);
         $names = [];
         foreach ($class->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
@@ -126,12 +140,6 @@ class Model extends Component {
             }
         }
         return $names;
-    }
-    /**
-     * 
-     */
-    protected function safeAttributes() {
-        return array_keys($this->rules());
     }
     /**
      * 
@@ -157,7 +165,6 @@ class Model extends Component {
         $validators    = [];
         $rules         = $this->rules();
         $validatorsMap = $this->getValidatorsMap();
-
         foreach ($rules as $attribute => $rule) {
             if (is_string($rule)) {
                 $rule = explode('|', $rule);
@@ -181,21 +188,11 @@ class Model extends Component {
      * @return \me\model\Validator[] Validators
      */
     protected function getValidators() {
-        $key              = $this->getKey();
-        $activeValidators = Cache::getCache([$key, 'activeValidators']);
+        $activeValidators = Cache::getCache([$this->_key, 'activeValidators']);
         if ($activeValidators === null) {
             $activeValidators = $this->createValidators();
-            Cache::setCache([$key, 'activeValidators'], $activeValidators);
+            Cache::setCache([$this->_key, 'activeValidators'], $activeValidators);
         }
         return $activeValidators;
-    }
-    /**
-     * 
-     */
-    protected function getKey() {
-        if ($this->_key === null) {
-            $this->_key = Security::generateRandomString();
-        }
-        return $this->_key;
     }
 }
