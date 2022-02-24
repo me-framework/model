@@ -115,15 +115,9 @@ class Model extends Component {
         return [];
     }
     /**
-     * 
-     */
-    protected function fields() {
-        return $this->attributes();
-    }
-    /**
      * @return array Attributes Names
      */
-    protected function attributes() {
+    protected function fields() {
         $class = new ReflectionClass($this);
         $names = [];
         foreach ($class->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
