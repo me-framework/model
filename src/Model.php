@@ -52,7 +52,7 @@ class Model extends Component {
         }
         $validators = $this->getValidators();
         foreach ($validators as $validator) {
-            $validator->validateAttributes($this, $attributes, $except);
+            $validator->validateAttributes($this, $this->_key, $attributes, $except);
         }
         return !$this->hasErrors();
     }

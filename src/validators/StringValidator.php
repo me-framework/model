@@ -25,8 +25,9 @@ class StringValidator extends Validator {
     /**
      * @param \me\model\Model $model Model
      * @param string $attribute Attribute Name
+     * @param string $modelKey
      */
-    public function validateAttribute($model, $attribute) {
+    public function validateAttribute($model, $attribute, $modelKey) {
         $value = $model->$attribute;
         if ($value !== null && (!is_scalar($value) || !is_string($value))) {
             $model->addError($attribute, 'string');
