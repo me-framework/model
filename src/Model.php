@@ -19,7 +19,7 @@ class Model extends Component {
     //
     //
     //
-    public function init() {
+    protected function init() {
         $this->_key = Security::generateRandomString();
     }
     /**
