@@ -19,9 +19,6 @@ class Model extends Component {
     //
     //
     //
-    protected function init() {
-        $this->_key = Security::generateRandomString();
-    }
     /**
      * @param array $values Values
      * @return bool Loaded
@@ -51,8 +48,16 @@ class Model extends Component {
             $this->clearErrors();
         }
         $validators = $this->getValidators();
-        foreach ($validators as $validator) {
-            $validator->validateAttributes($this, $this->_key, $attributes, $except);
+        foreach ($validators as $rule => $validator) {
+            if (is_array($validator)) {
+                foreach ($validator as $attribute) {
+                    $value = $this->$attribute;
+                    call_user_func([$this, $rule], $attribute, $value);
+                }
+            }
+            else {
+                $validator->validateAttributes($this, $this->_key, $attributes, $except);
+            }
         }
         return !$this->hasErrors();
     }
@@ -122,6 +127,10 @@ class Model extends Component {
     //
     //
     //
+    protected function init() {
+        parent::init();
+        $this->_key = Security::generateRandomString();
+    }
     /**
      * @return array Attributes Rules For Validation
      */
@@ -162,27 +171,42 @@ class Model extends Component {
      * 
      */
     protected function createValidators() {
-        $validators    = [];
-        $rules         = $this->rules();
-        $validatorsMap = $this->getValidatorsMap();
-        foreach ($rules as $attribute => $rule) {
-            if (is_string($rule)) {
-                $rule = explode('|', $rule);
+        $validators      = [];
+        $attribute_rules = $this->rules();
+        $validatorsMap   = $this->getValidatorsMap();
+        foreach ($attribute_rules as $attribute => $rules) {
+            if (is_string($rules)) {
+                $rules = explode('|', $rules);
             }
-            if (!is_array($rule) || empty($rule)) {
+            if (!is_array($rules) || empty($rules)) {
                 continue;
             }
-            foreach ($rule as $config) {
-                if (!isset($validators[$config])) {
-                    $arConfig            = explode(':', $config);
-                    $name                = strtolower($arConfig[0]);
-                    $options             = $arConfig[1] ?? '';
-                    $validators[$config] = Container::build(['class' => $validatorsMap[$name], 'options' => $options]);
+            foreach ($rules as $rule) {
+                if ($this->hasMethod($rule)) {
+                    if (isset($validators[$rule])) {
+                        $validators[$rule][] = $attribute;
+                        continue;
+                    }
+                    $validators[$rule] = [$attribute];
+                    continue;
                 }
-                $validators[$config]->addAttribute($attribute);
+
+                if (!isset($validators[$rule])) {
+                    $validators[$rule] = $this->createRule($validatorsMap, $rule);
+                }
+                $validators[$rule]->addAttribute($attribute);
             }
         }
         return $validators;
+    }
+    /**
+     * @return \me\model\Validator Validator
+     */
+    protected function createRule($validatorsMap, $rule) {
+        $arConfig = explode(':', $rule);
+        $name     = strtolower($arConfig[0]);
+        $options  = $arConfig[1] ?? '';
+        return Container::build(['class' => $validatorsMap[$name], 'options' => $options]);
     }
     /**
      * @return \me\model\Validator[] Validators
@@ -194,5 +218,12 @@ class Model extends Component {
             Cache::setCache([$this->_key, 'activeValidators'], $activeValidators);
         }
         return $activeValidators;
+    }
+    /**
+     * 
+     */
+    protected function hasMethod($name) {
+        $class = new ReflectionClass($this);
+        return $class->hasMethod($name) && $class->getMethod($name)->isPublic();
     }
 }
