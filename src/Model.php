@@ -5,8 +5,8 @@ use ReflectionClass;
 use ReflectionProperty;
 use me\core\Cache;
 use me\core\Component;
-use me\core\components\Container;
-use me\core\components\Security;
+use me\core\Container;
+use me\core\Security;
 use me\model\validators;
 class Model extends Component {
     /**
