@@ -12,7 +12,6 @@ class IntegerValidator extends Validator {
     private $max;
     /**
      * @param string $options Options
-     * @param string $attribute Attribute Name
      */
     public function setOptions($options) {
         $config = explode(',', $options);
@@ -26,22 +25,27 @@ class IntegerValidator extends Validator {
     /**
      * @param \me\model\Model $model Model
      * @param string $attribute Attribute Name
-     * @param string $modelKey
+     * @param string $modelKey Model Key
      */
     public function validateAttribute($model, $attribute, $modelKey) {
         $value = $model->$attribute;
-        if ($value !== null && (!is_scalar($value) || !is_numeric($value))) {
-            $model->addError($attribute, 'integer');
+        if (is_null($value)) {
             return;
         }
-        $model->$attribute = $value === null ? null : intval($value);
-        if ($this->min !== null && $model->$attribute !== null && $model->$attribute < $this->min) {
-            $model->addError($attribute, 'too small');
-            return;
+        //is_int();
+        //is_integer();
+        //is_numeric();
+        //is_scalar();
+        // ctype_digit((string) $limit)
+        if (!is_scalar($value) || !is_numeric($value)) {
+            return $model->addError($attribute, 'integer');
         }
-        if ($this->max !== null && $model->$attribute !== null && $model->$attribute > $this->max) {
-            $model->addError($attribute, 'too big');
-            return;
+        $model->$attribute = intval($value);
+        if ($this->min !== null && $model->$attribute < $this->min) {
+            return $model->addError($attribute, 'too small');
+        }
+        if ($this->max !== null && $model->$attribute > $this->max) {
+            return $model->addError($attribute, 'too big');
         }
     }
 }

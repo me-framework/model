@@ -25,21 +25,21 @@ class NumberValidator extends Validator {
     /**
      * @param \me\model\Model $model Model
      * @param string $attribute Attribute Name
-     * @param string $modelKey
+     * @param string $modelKey Model Key
      */
     public function validateAttribute($model, $attribute, $modelKey) {
         $value = $model->$attribute;
-        if ($value !== null && (!is_scalar($value) || !is_numeric($value))) {
-            $model->addError($attribute, 'number');
+        if (is_null($value)) {
             return;
         }
-        if ($this->min !== null && $model->$attribute !== null && $model->$attribute < $this->min) {
-            $model->addError($attribute, 'too small');
-            return;
+        if (!is_scalar($value) || !is_numeric($value)) {
+            return $model->addError($attribute, 'number');
         }
-        if ($this->max !== null && $model->$attribute !== null && $model->$attribute > $this->max) {
-            $model->addError($attribute, 'too big');
-            return;
+        if ($this->min !== null && $model->$attribute < $this->min) {
+            return $model->addError($attribute, 'too small');
+        }
+        if ($this->max !== null && $model->$attribute > $this->max) {
+            return $model->addError($attribute, 'too big');
         }
     }
 }

@@ -25,21 +25,22 @@ class StringValidator extends Validator {
     /**
      * @param \me\model\Model $model Model
      * @param string $attribute Attribute Name
-     * @param string $modelKey
+     * @param string $modelKey Model Key
      */
     public function validateAttribute($model, $attribute, $modelKey) {
         $value = $model->$attribute;
-        if ($value !== null && (!is_scalar($value) || !is_string($value))) {
-            $model->addError($attribute, 'string');
+        if (is_null($value)) {
+            return;
         }
-        else {
-            $model->$attribute = $value === null ? null : (string) $value;
+        if (!is_scalar($value) || !is_string($value)) {
+            return $model->addError($attribute, 'string');
         }
-        if ($this->min !== null && $model->$attribute !== null && mb_strlen($model->$attribute) < $this->min) {
+        $model->$attribute = (string) $value;
+        if ($this->min !== null && mb_strlen($model->$attribute) < $this->min) {
             $model->addError($attribute, 'too short');
             return;
         }
-        if ($this->max !== null && $model->$attribute !== null && mb_strlen($model->$attribute) > $this->max) {
+        if ($this->max !== null && mb_strlen($model->$attribute) > $this->max) {
             $model->addError($attribute, 'too long');
             return;
         }

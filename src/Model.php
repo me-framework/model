@@ -1,11 +1,13 @@
 <?php
 namespace me\model;
+use Exception;
 use ReflectionClass;
 use ReflectionProperty;
 use me\core\Cache;
 use me\core\Component;
 use me\core\components\Container;
 use me\core\components\Security;
+use me\model\validators;
 class Model extends Component {
     /**
      * 
@@ -15,9 +17,6 @@ class Model extends Component {
      * 
      */
     protected $_key;
-    //
-    //
-    //
     //
     /**
      * @param array $values Values
@@ -49,15 +48,7 @@ class Model extends Component {
         }
         $validators = $this->getValidators();
         foreach ($validators as $rule => $validator) {
-            if (is_array($validator)) {
-                foreach ($validator as $attribute) {
-                    $value = $this->$attribute;
-                    call_user_func([$this, $rule], $attribute, $value);
-                }
-            }
-            else {
-                $validator->validateAttributes($this, $this->_key, $attributes, $except);
-            }
+            $this->validateAttributes($rule, $validator, $attributes, $except);
         }
         return !$this->hasErrors();
     }
@@ -124,9 +115,9 @@ class Model extends Component {
         return $array;
     }
     //
-    //
-    //
-    //
+    /**
+     * 
+     */
     protected function init() {
         parent::init();
         $this->_key = Security::generateRandomString();
@@ -151,30 +142,68 @@ class Model extends Component {
         return $names;
     }
     /**
+     * @return bool
+     */
+    protected function hasMethod($name) {
+        $class = new ReflectionClass($this);
+        return $class->hasMethod($name) && $class->getMethod($name)->isPublic();
+    }
+    /**
      * 
      */
     protected function getValidatorsMap() {
         return [
-            'bool'     => 'me\model\validators\BooleanValidator',
-            'boolean'  => 'me\model\validators\BooleanValidator',
-            'int'      => 'me\model\validators\IntegerValidator',
-            'integer'  => 'me\model\validators\IntegerValidator',
-            'num'      => 'me\model\validators\NumberValidator',
-            'number'   => 'me\model\validators\NumberValidator',
-            'req'      => 'me\model\validators\RequiredValidator',
-            'required' => 'me\model\validators\RequiredValidator',
-            'str'      => 'me\model\validators\StringValidator',
-            'string'   => 'me\model\validators\StringValidator',
+            'array'     => validators\ArrayValidator::class,
+            'bigint'    => validators\BigintValidator::class,
+            'boolean'   => validators\BooleanValidator::class,
+            'default'   => validators\DefaultValidator::class,
+            'each'      => validators\EachValidator::class,
+            'email'     => validators\EmailValidator::class,
+            'float'     => validators\FloatValidator::class,
+            'gdate'     => validators\GdateValidator::class,
+            'gdatetime' => validators\GdatetimeValidator::class,
+            'in'        => validators\InValidator::class,
+            'integer'   => validators\IntegerValidator::class,
+            'jdate'     => validators\JdateValidator::class,
+            'jdatetime' => validators\JdatetimeValidator::class,
+            'national'  => validators\NationalValidator::class,
+            'nullable'  => validators\NullableValidator::class,
+            'number'    => validators\NumberValidator::class,
+            'required'  => validators\RequiredValidator::class,
+            'string'    => validators\StringValidator::class,
+            'time'      => validators\TimeValidator::class,
+            'trim'      => validators\TrimValidator::class,
         ];
+    }
+    /**
+     * @return \me\model\Validator Validator
+     */
+    protected function createRule(&$validators, $attribute, $rule) {
+        $config  = explode(':', $rule, 2);
+        $name    = $config[0];
+        $options = $config[1] ?? '';
+        if ($this->hasMethod($name)) {
+            if (!isset($validators[$name])) {
+                $validators[$name] = [];
+            }
+            $validators[$name][] = [$attribute, $options];
+            return;
+        }
+        if (!isset($validators[$name])) {
+            $validatorsMap = $this->getValidatorsMap();
+            if (!isset($validatorsMap[$name])) {
+                throw new Exception("Validator '$name' Not Found");
+            }
+            $validators[$name] = Container::build(['class' => $validatorsMap[$name], 'options' => $options]);
+        }
+        $validators[$name]->addAttribute($attribute);
     }
     /**
      * 
      */
     protected function createValidators() {
-        $validators      = [];
-        $attribute_rules = $this->rules();
-        $validatorsMap   = $this->getValidatorsMap();
-        foreach ($attribute_rules as $attribute => $rules) {
+        $validators = [];
+        foreach ($this->rules() as $attribute => $rules) {
             if (is_string($rules)) {
                 $rules = explode('|', $rules);
             }
@@ -182,31 +211,10 @@ class Model extends Component {
                 continue;
             }
             foreach ($rules as $rule) {
-                if ($this->hasMethod($rule)) {
-                    if (isset($validators[$rule])) {
-                        $validators[$rule][] = $attribute;
-                        continue;
-                    }
-                    $validators[$rule] = [$attribute];
-                    continue;
-                }
-
-                if (!isset($validators[$rule])) {
-                    $validators[$rule] = $this->createRule($validatorsMap, $rule);
-                }
-                $validators[$rule]->addAttribute($attribute);
+                $this->createRule($validators, $attribute, $rule);
             }
         }
         return $validators;
-    }
-    /**
-     * @return \me\model\Validator Validator
-     */
-    protected function createRule($validatorsMap, $rule) {
-        $arConfig = explode(':', $rule);
-        $name     = strtolower($arConfig[0]);
-        $options  = $arConfig[1] ?? '';
-        return Container::build(['class' => $validatorsMap[$name], 'options' => $options]);
     }
     /**
      * @return \me\model\Validator[] Validators
@@ -219,11 +227,24 @@ class Model extends Component {
         }
         return $activeValidators;
     }
+    //
     /**
      * 
      */
-    protected function hasMethod($name) {
-        $class = new ReflectionClass($this);
-        return $class->hasMethod($name) && $class->getMethod($name)->isPublic();
+    private function validateAttributes($rule, $validator, $attributes, $except) {
+        if ($validator instanceof Validator) {
+            return $validator->validateAttributes($this, $this->_key, $attributes, $except);
+        }
+        if (!is_array($validator)) {
+            return;
+        }
+        foreach ($validator as [$attribute, $options]) {
+            if (is_null($attributes) && !in_array($attribute, $except, true)) {
+                call_user_func([$this, $rule], $attribute, $this->$attribute, $options);
+            }
+            else if (is_array($attributes) && in_array($attribute, $attributes, true) && !in_array($attribute, $except, true)) {
+                call_user_func([$this, $rule], $attribute, $this->$attribute, $options);
+            }
+        }
     }
 }

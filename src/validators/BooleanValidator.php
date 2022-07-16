@@ -11,29 +11,24 @@ class BooleanValidator extends Validator {
     /**
      * @param \me\model\Model $model Model
      * @param string $attribute Attribute Name
-     * @param string $modelKey
+     * @param string $modelKey Model Key
      */
     public function validateAttribute($model, $attribute, $modelKey) {
-        $value = $model->$attribute;
-        if (
-                $value !== null   &&
-                $value !== true   && $value !== false &&
-                $value !== 1      && $value !== 0     &&
-                $value !== '1'    && $value !== '0'   &&
-                $value !== 'true' && $value !== 'false'
-        ) {
-            $model->addError($attribute, 'boolean');
+        $value = $this->cast($model->$attribute);
+        if (is_null($value)) {
+            return;
         }
-        else {
-            $model->$attribute = $this->cast($value);
+        if (!is_bool($value)) {
+            return $model->addError($attribute, 'boolean');
         }
+        $model->$attribute = $value;
     }
     private function cast($value) {
-        if (is_bool($value)) {
-            return $value;
-        }
         if (is_null($value)) {
             return null;
+        }
+        if (is_bool($value)) {
+            return $value;
         }
         return ($value === 1 || $value === '1' || $value === 'true');
     }

@@ -1,7 +1,8 @@
 <?php
+// not done
 namespace me\model\validators;
 use me\model\Validator;
-class RequiredValidator extends Validator {
+class ArrayValidator extends Validator {
     /**
      * @param string $options Options
      */
@@ -14,10 +15,6 @@ class RequiredValidator extends Validator {
      * @param string $modelKey Model Key
      */
     public function validateAttribute($model, $attribute, $modelKey) {
-        $value = $model->$attribute;
-        if ($value === null || $value === '' || $value === []) {
-            $model->$attribute = null;
-            $model->addError($attribute, 'required');
-        }
+        
     }
 }

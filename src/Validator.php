@@ -13,7 +13,7 @@ abstract class Validator extends Component {
     /**
      * @param \me\model\Model $model Model
      * @param string $attribute Attribute Name
-     * @param string $modelKey
+     * @param string $modelKey Model Key
      */
     abstract public function validateAttribute($model, $attribute, $modelKey);
     /**
@@ -24,15 +24,16 @@ abstract class Validator extends Component {
     }
     /**
      * @param \me\model\Model $model Model
+     * @param string $modelKey Model Key
      * @param array|null $attributes attributes
      * @param array $except except
      */
-    public function validateAttributes($model, $modelKey, $attributes = null, $except = []) {
+    public function validateAttributes($model, $modelKey, $attributes, $except) {
         foreach ($this->_attributes as $attribute) {
-            if ($attributes === null && !in_array($attribute, $except, true)) {
+            if (is_null($attributes) && !in_array($attribute, $except, true)) {
                 $this->validateAttribute($model, $attribute, $modelKey);
             }
-            else if ($attributes !== null && in_array($attribute, $attributes, true) && !in_array($attribute, $except, true)) {
+            else if (is_array($attributes) && in_array($attribute, $attributes, true) && !in_array($attribute, $except, true)) {
                 $this->validateAttribute($model, $attribute, $modelKey);
             }
         }
