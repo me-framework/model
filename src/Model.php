@@ -1,6 +1,5 @@
 <?php
 namespace me\model;
-use Exception;
 use ReflectionClass;
 use ReflectionProperty;
 use me\core\Cache;
@@ -8,6 +7,7 @@ use me\core\Component;
 use me\core\Container;
 use me\core\Security;
 use me\model\validators;
+use me\exceptions\Exception;
 /**
  * 
  */
@@ -197,7 +197,7 @@ class Model extends Component {
             if (!isset($validatorsMap[$name])) {
                 throw new Exception("Validator '$name' Not Found");
             }
-            $validators[$name] = Container::build(['class' => $validatorsMap[$name], 'options' => $options]);
+            $validators[$name] = Container::build($validatorsMap[$name], ['options' => $options]);
         }
         $validators[$name]->addAttribute($attribute);
     }
