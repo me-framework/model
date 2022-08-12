@@ -1,6 +1,9 @@
 <?php
 namespace me\model\validators;
 use me\model\Validator;
+/**
+ * 
+ */
 class StringValidator extends Validator {
     /**
      * @var int min

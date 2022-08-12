@@ -2,6 +2,9 @@
 // not done
 namespace me\model\validators;
 use me\model\Validator;
+/**
+ * 
+ */
 class FloatValidator extends Validator {
     /**
      * @param string $options Options
